@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Aira</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050816;
+      color: #ffffff;
+    }
+
+    body {
+      position: relative;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px 18px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      z-index: -2;
+      background: conic-gradient(
+        from 0deg,
+        #0b132b,
+        #2b0d42,
+        #0d3b4c,
+        #3d1328,
+        #102542,
+        #0b132b
+      );
+      animation: slowBgSpin 28s linear infinite;
+      filter: blur(28px) saturate(1.25);
+      opacity: 0.95;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: radial-gradient(circle at center, rgba(4, 10, 24, 0.25) 0%, rgba(2, 6, 15, 0.72) 100%);
+      pointer-events: none;
+    }
+
+    @keyframes slowBgSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .top-bar {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      position: relative;
+      z-index: 40;
+    }
+
+    #menuBtn {
+      background: rgba(5, 14, 30, 0.85);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      color: #e8fbff;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      line-height: 1;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .menu-panel {
+      display: none;
+      position: absolute;
+      top: 46px;
+      right: 0;
+      width: 270px;
+      background: rgba(8, 18, 38, 0.96);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65);
+      z-index: 50;
+    }
+
+    .menu-panel.open {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 0.82rem;
+      color: #cbeeff;
+    }
+
+    .menu-panel select,
+    .menu-panel input[type="text"] {
+      width: 100%;
+      background: rgba(3, 9, 20, 0.9);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: #ffffff;
+      padding: 7px 9px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .menu-panel input[type="range"] {
+      width: 100%;
+      accent-color: #00f0ff;
+    }
+
+    .menu-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .menu-btn-small {
+      flex: 1;
+      background: rgba(0, 240, 255, 0.16);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      color: #ffffff;
+      padding: 7px 8px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .middle-area {
+      width: 100%;
+      max-width: 440px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 0;
+      padding: 6px 0;
+    }
+
+    .chat-log {
+      width: 100%;
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(4, 13, 28, 0.62);
+      border: 1px solid rgba(0, 240, 255, 0.18);
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .msg-row {
+      font-size: 0.86rem;
+      line-height: 1.35;
+      padding: 6px 9px;
+      border-radius: 9px;
+      word-wrap: break-word;
+    }
+
+    .msg-user {
+      align-self: flex-end;
+      background: rgba(0, 240, 255, 0.16);
+      border: 1px solid rgba(0, 240, 255, 0.32);
+      color: #e6fbff;
+    }
+
+    .msg-ai {
+      align-self: flex-start;
+      background: rgba(255, 42, 133, 0.15);
+      border: 1px solid rgba(255, 42, 133, 0.3);
+      color: #ffe8f2;
+    }
+
+    .stage {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 165px;
+      height: 165px;
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+
+    .pink-core-glow {
+      position: absolute;
+      width: 105px;
+      height: 105px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 28, 138, 0.72) 0%,
+        rgba(214, 15, 112, 0.42) 48%,
+        rgba(120, 8, 72, 0.12) 72%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      box-shadow: 0 0 38px rgba(255, 24, 130, 0.38), inset 0 0 26px rgba(255, 75, 160, 0.35);
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      pointer-events: none;
+    }
+
+    .stage.active .pink-core-glow {
+      transform: scale(1.18);
+      opacity: 1;
+    }
+
+    canvas {
+      position: relative;
+      z-index: 2;
+      display: block;
+      width: 165px;
+      height: 165px;
+      pointer-events: none;
+    }
+
+    .controls {
+      position: relative;
+      z-index: 20;
+      text-align: center;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 9px;
+    }
+
+    #status {
+      width: 100%;
+      font-size: 0.85rem;
+      color: #d9f8ff;
+      background: rgba(4, 13, 28, 0.78);
+      border: 1px solid rgba(41, 244, 255, 0.28);
+      border-radius: 10px;
+      padding: 6px 10px;
+      min-height: 32px;
+      word-wrap: break-word;
+    }
+
+    .chat-box {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      z-index: 25;
+    }
+
+    #msgInput {
+      flex: 1;
+      background: rgba(5, 14, 30, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      color: #ffffff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    #sendBtn {
+      background: rgba(0, 240, 255, 0.22);
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      padding: 10px 15px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .action-row {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    #micBtn, #callModeBtn {
+      flex: 1;
+      position: relative;
+      z-index: 30;
+      touch-action: manipulation;
+      background: rgba(0, 240, 255, 0.22);
+      border: 2px solid #00f0ff;
+      color: #00f0ff;
+      padding: 11px 14px;
+      font-size: 0.96rem;
+      border-radius: 28px;
+      font-weight: bold;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+      cursor: pointer;
+    }
+
+    #micBtn.listening {
+      background: #ff2a85;
+      color: #ffffff;
+      border-color: #ffad33;
+    }
+
+    #callModeBtn.active {
+      background: #16a34a;
+      color: #ffffff;
+      border-color: #86efac;
+      box-shadow: 0 0 18px rgba(34, 197, 94, 0.65);
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <button id="menuBtn" type="button" aria-label="Menu">⋮</button>
+    <div class="menu-panel" id="menuPanel">
+      <div class="menu-item">
+        <label for="voiceSelect">Voice</label>
+        <select id="voiceSelect"></select>
+      </div>
+      <div class="menu-item">
+        <label for="pitchRange">Pitch</label>
+        <input id="pitchRange" type="range" min="0.6" max="1.6" step="0.1" value="1.1">
+      </div>
+      <div class="menu-item">
+        <label for="rateRange">Speed</label>
+        <input id="rateRange" type="range" min="0.7" max="1.4" step="0.1" value="1.0">
+      </div>
+      <div class="menu-item">
+        <label for="keyInput">Key</label>
+        <input id="keyInput" type="text" placeholder="Key...">
+      </div>
+      <div class="menu-actions">
+        <button id="saveKeyBtn" class="menu-btn-small" type="button">Save</button>
+        <button id="clearChatBtn" class="menu-btn-small" type="button">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="middle-area">
+    <div class="chat-log" id="chatLog"></div>
+    <div class="stage" id="stageBox">
+      <div class="pink-core-glow"></div>
+      <canvas id="sphereCanvas" width="165" height="165"></canvas>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div id="status">Chat ready</div>
+
+    <div class="chat-box">
+      <input id="msgInput" type="text" placeholder="Yahan likh kar bhejein...">
+      <button id="sendBtn" type="button">Send</button>
+    </div>
+
+    <div class="action-row">
+      <button id="micBtn" type="button">Dhawani</button>
+      <button id="callModeBtn" type="button">Telephone</button>
+    </div>
+  </div>
+
+  <script>
+    const menuBtn = document.getElementById('menuBtn');
+    const menuPanel = document.getElementById('menuPanel');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const pitchRange = document.getElementById('pitchRange');
+    const rateRange = document.getElementById('rateRange');
+    const keyInput = document.getElementById('keyInput');
+    const saveKeyBtn = document.getElementById('saveKeyBtn');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+    const chatLog = document.getElementById('chatLog');
+    const statusText = document.getElementById('status');
+    const msgInput = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const micBtn = document.getElementById('micBtn');
+    const callModeBtn = document.getElementById('callModeBtn');
+
+    let API_KEY = localStorage.getItem('saved_gemini_key') || "";
+    if (API_KEY) keyInput.value = API_KEY;
+
+    let savedVoiceURI = localStorage.getItem('saved_voice_uri') || "";
+    let savedPitch = parseFloat(localStorage.getItem('saved_pitch') || "1.1");
+    let savedRate = parseFloat(localStorage.getItem('saved_rate') || "1.0");
+    pitchRange.value = savedPitch;
+    rateRange.value = savedRate;
+
+    function addBubble(sender, text) {
+      const div = document.createElement('div');
+      div.className = 'msg-row ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
+      div.textContent = text;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuPanel.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!menuPanel.contains(e.target) && e.target !== menuBtn) {
+        menuPanel.classList.remove('open');
+      }
+    });
+
+    function loadVoices() {
+      if (!('speechSynthesis' in window)) return;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return;
+
+      voiceSelect.innerHTML = "";
+      voices.forEach((v, idx) => {
+        const opt = document.createElement('option');
+        opt.value = v.voiceURI;
+        opt.textContent = `${v.name} (${v.lang})`;
+        if (savedVoiceURI ? v.voiceURI === savedVoiceURI : idx === 0) {
+          opt.selected = true;
+        }
+        voiceSelect.appendChild(opt);
+      });
+    }
+
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    voiceSelect.addEventListener('change', () => {
+      savedVoiceURI = voiceSelect.value;
+      localStorage.setItem('saved_voice_uri', savedVoiceURI);
+    });
+
+    pitchRange.addEventListener('input', () => {
+      savedPitch = parseFloat(pitchRange.value);
+      localStorage.setItem('saved_pitch', String(savedPitch));
+    });
+
+    rateRange.addEventListener('input', () => {
+      savedRate = parseFloat(rateRange.value);
+      localStorage.setItem('saved_rate', String(savedRate));
+    });
+
+    saveKeyBtn.addEventListener('click', () => {
+      API_KEY = keyInput.value.replace(/\s+/g, '');
+      localStorage.setItem('saved_gemini_key', API_KEY);
+      statusText.innerText = API_KEY ? "Saved" : "Empty";
+      menuPanel.classList.remove('open');
+    });
+
+    clearChatBtn.addEventListener('click', () => {
+      chatHistory = [];
+      chatLog.innerHTML = "";
+      statusText.innerText = "Cleared";
+      menuPanel.classList.remove('open');
+    });
+
+    const canvas = document.getElementById('sphereCanvas');
+    const ctx = canvas.getContext('2d');
+    const stageBox = document.getElementById('stageBox');
+
+    const CX = 82.5, CY = 82.5;
+    let angleY = 0;
+    let angleX = 0.25;
+    let rotSpeed = 0.014;
+    let spread = 0;
+    let targetSpread = 0;
+
+    const particles = [];
+    const totalDots = 300;
+
+    for (let i = 0; i < totalDots; i++) {
+      const phi = Math.acos(-1 + (2 * i) / totalDots);
+      const theta = Math.sqrt(totalDots * Math.PI) * phi;
+
+      const dirX = Math.cos(theta) * Math.sin(phi);
+      const dirY = Math.sin(theta) * Math.sin(phi);
+      const dirZ = Math.cos(phi);
+
+      const baseRadius = 30 + (i % 7) * 2.4;
+      const isOrange = i % 3 === 0;
+      const isPinkAccent = i % 5 === 0;
+
+      particles.push({
+        baseX: baseRadius * dirX,
+        baseY: baseRadius * dirY,
+        baseZ: baseRadius * dirZ,
+        dirX,
+        dirY,
+        dirZ,
+        radius: 1.55 + (i % 4) * 0.45,
+        phase: i * 0.37,
+        isOrange,
+        isPinkAccent
+      });
+    }
+
+    function setSpeakingState(isActive) {
+      if (isActive) {
+        targetSpread = 1;
+        rotSpeed = 0.042;
+        stageBox.classList.add('active');
+      } else {
+        targetSpread = 0;
+        rotSpeed = 0.014;
+        stageBox.classList.remove('active');
+      }
+    }
+
+    function drawSphere() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      spread += (targetSpread - spread) * 0.09;
+
+      const coreGrad = ctx.createRadialGradient(CX, CY, 5, CX, CY, 66);
+      coreGrad.addColorStop(0, 'rgba(255, 45, 148, 0.78)');
+      coreGrad.addColorStop(0.55, 'rgba(195, 14, 105, 0.42)');
+      coreGrad.addColorStop(1, 'rgba(195, 14, 105, 0)');
+      ctx.beginPath();
+      ctx.arc(CX, CY, 66, 0, Math.PI * 2);
+      ctx.fillStyle = coreGrad;
+      ctx.fill();
+
+      const projected = particles.map((p) => {
+        const pulse = Math.sin(Date.now() * 0.004 + p.phase) * 1.6;
+        const pushOut = spread * 20 + pulse;
+
+        const px = p.baseX + p.dirX * pushOut;
+        const py = p.baseY + p.dirY * pushOut;
+        const pz = p.baseZ + p.dirZ * pushOut;
+
+        const x1 = px * Math.cos(angleY) - pz * Math.sin(angleY);
+        const z1 = pz * Math.cos(angleY) + px * Math.sin(angleY);
+
+        const y2 = py * Math.cos(angleX) - z1 * Math.sin(angleX);
+        const z2 = z1 * Math.cos(angleX) + py * Math.sin(angleX);
+
+        const perspective = 155 / (155 + z2);
+        return {
+          sx: CX + x1 * perspective,
+          sy: CY + y2 * perspective,
+          z: z2,
+          r: Math.max(1.0, p.radius * perspective),
+          isOrange: p.isOrange,
+          isPinkAccent: p.isPinkAccent
+        };
+      });
+
+      projected.sort((a, b) => b.z - a.z);
+
+      projected.forEach((pt) => {
+        let color;
+        if (pt.isOrange) {
+          color = pt.z < 0 ? '#ff9d1c' : '#c96800';
+        } else if (pt.isPinkAccent) {
+          color = pt.z < 0 ? '#ff6ec7' : '#b51777';
+        } else {
+          color = pt.z < 0 ? '#3bf4ff' : '#0088b8';
+        }
+
+        ctx.beginPath();
+        ctx.arc(pt.sx, pt.sy, pt.r * 1.45, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(pt.sx, pt.sy, pt.r, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+
+      angleY += rotSpeed;
+      requestAnimationFrame(drawSphere);
+    }
+    drawSphere();
+
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let rec = SpeechRec ? new SpeechRec() : null;
+    let chatHistory = [];
+    let isRecognizing = false;
+    let isCallMode = false;
+
+    const WEB_APP_FALLBACKS = {
+      youtube: 'https://www.youtube.com',
+      google: 'https://www.google.com',
+      whatsapp: 'https://web.whatsapp.com',
+      instagram: 'https://www.instagram.com',
+      gmail: 'https://mail.google.com',
+      chatgpt: 'https://chatgpt.com',
+      gemini: 'https://gemini.google.com'
+    };
+
+    function triggerAppAction(appName) {
+      const clean = (appName || '').trim().toLowerCase();
+      statusText.innerText = "APP:" + clean;
+      window.location.hash = "app=" + encodeURIComponent(clean);
+
+      const matchedKey = Object.keys(WEB_APP_FALLBACKS).find((k) => clean.includes(k));
+      const targetUrl = matchedKey
+        ? WEB_APP_FALLBACKS[matchedKey]
+        : 'https://www.google.com/search?q=' + encodeURIComponent(clean);
+
+      setTimeout(() => {
+        window.open(targetUrl, '_blank');
+      }, 900);
+    }
+
+    function speak(text, shouldContinueCall = false) {
+      if (!('speechSynthesis' in window)) {
+        if (shouldContinueCall && isCallMode) startCallListen();
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const cleanText = text.replace(/[*#_]/g, '');
+      const u = new SpeechSynthesisUtterance(cleanText);
+      const voices = window.speechSynthesis.getVoices();
+      const chosen = voices.find((v) => v.voiceURI === savedVoiceURI);
+      if (chosen) {
+        u.voice = chosen;
+        u.lang = chosen.lang || 'hi-IN';
+      } else {
+        u.lang = 'hi-IN';
+      }
+      u.pitch = savedPitch;
+      u.rate = savedRate;
+      u.onstart = () => setSpeakingState(true);
+      u.onend = () => {
+        setSpeakingState(false);
+        if (shouldContinueCall && isCallMode) {
+          setTimeout(() => startCallListen(), 250);
+        }
+      };
+      u.onerror = () => {
+        setSpeakingState(false);
+        if (shouldContinueCall && isCallMode) {
+          setTimeout(() => startCallListen(), 250);
+        }
+      };
+      window.speechSynthesis.speak(u);
+    }
+
+    function startCallListen() {
+      if (!rec || isRecognizing || !isCallMode) return;
+      try {
+        rec.start();
+      } catch (err) {}
+    }
+
+    callModeBtn.addEventListener('click', () => {
+      isCallMode = !isCallMode;
+      callModeBtn.classList.toggle('active', isCallMode);
+      if (isCallMode) {
+        statusText.innerText = "Telephone mode on";
+        setSpeakingState(true);
+        startCallListen();
+      } else {
+        isRecognizing = false;
+        micBtn.classList.remove('listening');
+        try { if (rec) rec.stop(); } catch (e) {}
+        window.speechSynthesis.cancel();
+        setSpeakingState(false);
+        statusText.innerText = "Chat ready";
+      }
+    });
+
+    async function askAssistant(command, fromVoice = false) {
+      const currentKey = (keyInput.value || API_KEY || localStorage.getItem('saved_gemini_key') || '').replace(/\s+/g, '');
+      if (currentKey) {
+        API_KEY = currentKey;
+        localStorage.setItem('saved_gemini_key', currentKey);
+      }
+
+      if (!currentKey) {
+        statusText.innerText = "Menu mein key daal kar Save karein";
+        return;
+      }
+
+      statusText.innerText = "Thinking...";
+      setSpeakingState(true);
+
+      const systemRule = `तुम आयरा नाम की पर्सनल असिस्टेंट हो। तुम्हारे मालिक और निर्माता दिनेश कुमार गुप्ता हैं। जब कोई पूछे कि तुम्हारा मालिक या ओनर कौन है या तुम्हें किसने बनाया है, तो सीधा बताओ कि दिनेश कुमार गुप्ता हैं। बातचीत में यूज़र को "सर" कहो और हर सवाल का छोटा व सीधा जवाब हिंदी में दो।
+अगर किसी ऐप को खोलने के लिए कहा जाए (जैसे YouTube, WhatsApp, Instagram, Gmail, ChatGPT, Google या कोई अन्य ऐप) तो जवाब के साथ [APP:ऐप_का_नाम] लिखो।
+अगर कॉल करने कहें तो [CALL:नंबर], व्हाट्सएप मैसेज तैयार करने कहें तो [WA:संदेश], गूगल सर्च कहें तो [GO:
